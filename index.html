@@ -1,28 +1,463 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hola Mundo</title>
-<style>
-body {
-margin: 0;
-height: 100vh;
-display: flex;
-justify-content: center;
-align-items: center;
-background-color: #f4f4f4;
-font-family: Arial, sans-serif;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Cumplimiento Fiscal 2026</title>
+    <!-- SheetJS (xlsx) para la exportación directa a Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #1B365D;
+            --primary-light: #2c4d82;
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #595959;
+            --border-color: #d9d9d9;
+            --green: #c6efce;
+            --green-text: #006100;
+            --yellow: #ffeb9c;
+            --yellow-text: #9c6500;
+            --red: #ffc7ce;
+            --red-text: #9c0006;
+        }
 
-}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
 
-h1 {
-font-size: 80px;
-color: #0078D7;
-}
-</style>
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin: 0;
+            font-size: 24px;
+        }
+
+        p.subtitle {
+            margin: 5px 0 0 0;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            background-color: #e1e6ed;
+            border: none;
+            padding: 10px 18px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--primary);
+            border-radius: 4px 4px 0 0;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+        .tab-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 0 8px 8px 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            overflow-x: auto;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 10px 12px;
+        }
+
+        th {
+            background-color: var(--primary);
+            color: white;
+            text-align: center;
+            font-weight: 600;
+            vertical-align: middle;
+        }
+
+        td:first-child {
+            font-weight: 600;
+            background-color: #fafbfc;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        /* Checkbox styling */
+        input[type="checkbox"] {
+            transform: scale(1.3);
+            cursor: pointer;
+        }
+
+        /* Status colors */
+        .status-cell {
+            font-weight: bold;
+            text-align: center;
+            transition: background 0.3s;
+        }
+
+        .status-green {
+            background-color: var(--green) !important;
+            color: var(--green-text);
+        }
+
+        .status-yellow {
+            background-color: var(--yellow) !important;
+            color: var(--yellow-text);
+        }
+
+        .status-red {
+            background-color: var(--red) !important;
+            color: var(--red-text);
+        }
+
+        .btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 9px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-excel {
+            background-color: #107c41;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            display: none;
+            z-index: 1000;
+            font-size: 14px;
+        }
+    </style>
 </head>
 <body>
-<h1>Hola Mundo</h1>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>Control de Cumplimiento Fiscal 2026</h1>
+            <p class="subtitle">Panel interactivo con casillas, autoguardado y exportación directa a Excel</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn" onclick="saveDataManually()">Guardar Progreso</button>
+            <button class="btn btn-excel" onclick="exportToExcel()">Exportar a Excel (.xlsx)</button>
+        </div>
+    </header>
+
+    <div class="tabs" id="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab('Dashboard', event)">Dashboard General</button>
+    </div>
+
+    <div id="tab-contents">
+        <!-- Contenido generado dinámicamente -->
+    </div>
+</div>
+
+<div class="notification" id="notif">¡Acción realizada con éxito!</div>
+
+<script>
+const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+const companies = ["Empresa Alfa S.A. de C.V.", "Comercializadora Beta S.A.", "Consultores Gamma S.C.", "Industrias Delta S.A. de C.V.", "Servicios Epsilon S.C."];
+const headersReqs = [
+    "Opinión de Cumplimiento (32-D)",
+    "Constancia de Situación Fiscal",
+    "Provisión ISR y PTU",
+    "Pago Provisional de ISR",
+    "DIOT",
+    "Contabilidad electrónica",
+    "Listado 69 y 69B",
+    "Destrucción de Inventarios",
+    "Comprobante de Pago",
+    "Vaciado de Impuestos"
+];
+
+const totalReqs = headersReqs.length;
+
+function initApp() {
+    const tabsContainer = document.getElementById('tab-buttons');
+    const contentsContainer = document.getElementById('tab-contents');
+
+    // 1. Dashboard Tab
+    let dashHtml = `
+        <div id="content-Dashboard" class="tab-content active">
+            <h2 style="color: var(--primary); margin-top: 0;">Panel de Control - Resumen Ejecutivo Anual</h2>
+            <p style="color: var(--text-muted); font-size: 13px;">Porcentaje de cumplimiento global por empresa y mes.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Empresa / Contribuyente</th>
+                        ${months.map(m => `<th>${m}</th>`).join('')}
+                        <th>Promedio Anual</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    companies.forEach((comp, rIdx) => {
+        dashHtml += `<tr><td>${comp}</td>`;
+        months.forEach((m, mIdx) => {
+            dashHtml += `<td class="center status-cell" id="dash-${rIdx}-${mIdx}">0.0%</td>`;
+        });
+        dashHtml += `<td class="center status-cell" style="font-weight:bold;" id="dash-avg-${rIdx}">0.0%</td></tr>`;
+    });
+
+    dashHtml += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    contentsContainer.innerHTML = dashHtml;
+
+    // 2. Month Tabs
+    months.forEach(m => {
+        const btn = document.createElement('button');
+        btn.className = 'tab-btn';
+        btn.innerText = m + " 2026";
+        btn.onclick = (e) => switchTab(m, e);
+        tabsContainer.appendChild(btn);
+
+        let monthHtml = `
+            <div id="content-${m}" class="tab-content">
+                <h2 style="color: var(--primary); margin-top: 0;">Control Mensual — ${m.toUpperCase()} 2026</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre de la Empresa</th>
+                            ${headersReqs.map(h => `<th>${h}</th>`).join('')}
+                            <th>% Cumplimiento</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        companies.forEach((comp, rIdx) => {
+            monthHtml += `<tr><td>${comp}</td>`;
+            for (let cIdx = 0; cIdx < totalReqs; cIdx++) {
+                monthHtml += `<td class="center"><input type="checkbox" data-month="${m}" data-row="${rIdx}" data-col="${cIdx}" onchange="updateData()"></td>`;
+            }
+            monthHtml += `<td class="center status-cell" id="perc-${m}-${rIdx}">0.0%</td></tr>`;
+        });
+
+        monthHtml += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+        contentsContainer.innerHTML += monthHtml;
+    });
+
+    loadData();
+    calculateAll();
+}
+
+function switchTab(tabName, event) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    
+    document.getElementById('content-' + tabName).classList.add('active');
+    if (event) event.currentTarget.classList.add('active');
+}
+
+function updateData() {
+    calculateAll();
+    saveDataAuto();
+}
+
+function calculateAll() {
+    companies.forEach((comp, rIdx) => {
+        let annualSum = 0;
+
+        months.forEach((m, mIdx) => {
+            let checkedCount = 0;
+            for (let cIdx = 0; cIdx < totalReqs; cIdx++) {
+                const cb = document.querySelector(`input[data-month="${m}"][data-row="${rIdx}"][data-col="${cIdx}"]`);
+                if (cb && cb.checked) {
+                    checkedCount++;
+                }
+            }
+            const percentage = checkedCount / totalReqs;
+            annualSum += percentage;
+
+            const percCell = document.getElementById(`perc-${m}-${rIdx}`);
+            if (percCell) {
+                percCell.innerText = (percentage * 100).toFixed(1) + '%';
+                applyStatusStyle(percCell, percentage);
+            }
+
+            const dashCell = document.getElementById(`dash-${rIdx}-${mIdx}`);
+            if (dashCell) {
+                dashCell.innerText = (percentage * 100).toFixed(1) + '%';
+                applyStatusStyle(dashCell, percentage);
+            }
+        });
+
+        const annualAvg = annualSum / 12;
+        const avgCell = document.getElementById(`dash-avg-${rIdx}`);
+        if (avgCell) {
+            avgCell.innerText = (annualAvg * 100).toFixed(1) + '%';
+            applyStatusStyle(avgCell, annualAvg);
+        }
+    });
+}
+
+function applyStatusStyle(cell, val) {
+    cell.className = cell.className.replace(/status-(green|yellow|red)/g, '').trim();
+    if (val === 1) {
+        cell.classList.add('status-green');
+    } else if (val >= 0.5) {
+        cell.classList.add('status-yellow');
+    } else {
+        cell.classList.add('status-red');
+    }
+}
+
+function saveDataAuto() {
+    const state = {};
+    document.querySelectorAll('input[type="checkbox"]').forEach((cb, idx) => {
+        state[idx] = cb.checked;
+    });
+    localStorage.setItem('fiscal_data_2026', JSON.stringify(state));
+}
+
+function loadData() {
+    const saved = localStorage.getItem('fiscal_data_2026');
+    if (saved) {
+        const state = JSON.parse(saved);
+        document.querySelectorAll('input[type="checkbox"]').forEach((cb, idx) => {
+            if (state[idx] !== undefined) {
+                cb.checked = state[idx];
+            }
+        });
+    }
+}
+
+function saveDataManually() {
+    saveDataAuto();
+    showNotification("¡Progreso guardado correctamente!");
+}
+
+function showNotification(msg) {
+    const notif = document.getElementById('notif');
+    notif.innerText = msg;
+    notif.style.display = 'block';
+    setTimeout(() => {
+        notif.style.display = 'none';
+    }, 2500);
+}
+
+// Función para exportar a Excel con hojas múltiples
+function exportToExcel() {
+    const wb = XLSX.utils.book_new();
+
+    const dashData = [];
+    let dashHeader = ["Empresa / Contribuyente", ...months, "Promedio Anual"];
+    dashData.push(dashHeader);
+
+    companies.forEach((comp, rIdx) => {
+        let row = [comp];
+        months.forEach((m, mIdx) => {
+            const cell = document.getElementById(`dash-${rIdx}-${mIdx}`);
+            row.push(cell ? cell.innerText : "0.0%");
+        });
+        const avgCell = document.getElementById(`dash-avg-${rIdx}`);
+        row.push(avgCell ? avgCell.innerText : "0.0%");
+        dashData.push(row);
+    });
+    const wsDash = XLSX.utils.aoa_to_sheet(dashData);
+    XLSX.utils.book_append_sheet(wb, wsDash, "Dashboard");
+
+    months.forEach(m => {
+        const monthData = [];
+        let mHeader = ["Nombre de la Empresa", ...headersReqs, "% Cumplimiento"];
+        monthData.push(mHeader);
+
+        companies.forEach((comp, rIdx) => {
+            let row = [comp];
+            for (let cIdx = 0; cIdx < totalReqs; cIdx++) {
+                const cb = document.querySelector(`input[data-month="${m}"][data-row="${rIdx}"][data-col="${cIdx}"]`);
+                row.push(cb && cb.checked ? "VERDADERO" : "FALSO");
+            }
+            const percCell = document.getElementById(`perc-${m}-${rIdx}`);
+            row.push(percCell ? percCell.innerText : "0.0%");
+            monthData.push(row);
+        });
+
+        const wsMonth = XLSX.utils.aoa_to_sheet(monthData);
+        XLSX.utils.book_append_sheet(wb, wsMonth, m + " 2026");
+    });
+
+    XLSX.writeFile(wb, "control_cumplimiento_fiscal_2026.xlsx");
+    showNotification("¡Archivo Excel exportado con éxito!");
+}
+
+window.onload = initApp;
+</script>
+
 </body>
 </html>
